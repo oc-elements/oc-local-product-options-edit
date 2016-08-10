@@ -4,7 +4,9 @@
   "main": "oc-local-product-options-edit.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0",
-    "oc-local-product-extras-edit": "git://github.com/oc-elements/oc-local-product-extras-edit#1.x",
+    "oc-product-api": "git://github.com/oc-elements/oc-product-api#1.x",
+    "oc-product-option-api": "git://github.com/oc-elements/oc-product-option-api#1.x",
+    "oc-list-selection": "git://github.com/oc-elements/oc-list-selection#1.x"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
