@@ -1,4 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../oc-product-api/oc-product-api.html">
+<link rel="import" href="../oc-product-option-api/oc-product-option-api.html">
+<link rel="import" href="../oc-list-selection/oc-list-selection.html">
 
 <!--
 `oc-local-product-options-edit`
@@ -14,7 +17,12 @@ Element to Element to edit local product option sets on the Ordercloud platform
         display: block;
       }
     </style>
-    <h2>Hello [[prop1]]</h2>
+
+    <oc-product-api id="prodApi"></oc-product-api>
+    <oc-product-option-api id="optionApi"></oc-product-option-api>
+
+    <oc-list-selection></oc-list-selection>
+
   </template>
 
   <script>
@@ -23,10 +31,7 @@ Element to Element to edit local product option sets on the Ordercloud platform
       is: 'oc-local-product-options-edit',
 
       properties: {
-        prop1: {
-          type: String,
-          value: 'oc-local-product-options-edit',
-        },
+
       },
 
     });
