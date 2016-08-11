@@ -16,12 +16,19 @@ Element to Element to edit local product option sets on the Ordercloud platform
       :host {
         display: block;
       }
+
+      paper-button {
+        margin-top: 15px;
+        margin-bottom: 15px;
+      }
     </style>
 
     <oc-product-api id="prodApi"></oc-product-api>
     <oc-product-option-api id="optionApi"></oc-product-option-api>
 
-    <oc-list-selection></oc-list-selection>
+    <oc-list-selection selected-list="[[selectedList]]" selectable-list="[[selectableList]]"></oc-list-selection>
+
+    <paper-button on-tap="updateOptions" raised>Update Options</paper-button>
 
   </template>
 
@@ -31,8 +38,80 @@ Element to Element to edit local product option sets on the Ordercloud platform
       is: 'oc-local-product-options-edit',
 
       properties: {
+        organisationId: Number,
+        productId : Number,
+        selectedList : Array,
+        selectableList: Array,
+
+        originalList: Array,
+
+        loading: {
+          type: Boolean,
+          notify: true
+        }
 
       },
+
+      listeners : {
+        "item-add" : "addOption"
+      },
+
+      getSelectedOptions : function(productId){
+        return this.$.prodApi.getProductOptionSets(productId);
+      },
+
+      getSelectableOptions : function(){
+        return this.$.optionApi.getOptionSets(1, -1);
+      },
+
+      addOption : function(e){
+        var optionsSetId = e.detail.id;
+
+//        this.prodApi.addProductOptionSet(this.productId, optionsSetId);
+      },
+
+      updateOptions : function(){
+
+        this.loading = true;
+
+        var promisesToExecute = [],
+                selected = this.selectedList,
+                original = this.originalList;
+
+        selected.forEach(function(obj){
+          var isInOriginal = false;
+
+          for(var i=0; i<original.length; i++) {
+            if(obj.id === original[i].id){
+              isInOriginal = true;
+            }
+          }
+
+          if(!isInOriginal) {
+            promisesToExecute.push(this.$.prodApi.addProductOptionSet(this.productId, obj.id))
+          }
+
+        }.bind(this))
+
+        original.forEach(function(obj){
+          var isInselected = false;
+
+          for(var i=0; i<selected.length; i++) {
+            if(obj.id === selected[i].id){
+              isInselected = true;
+            }
+          }
+
+          if(!isInselected) {
+            promisesToExecute.push(this.$.prodApi.removeProductOptionSet(this.productId, obj.id))
+          }
+
+        }.bind(this))
+
+        Promise.all(promisesToExecute)
+                .catch(this.fire.bind(this, 'extra-set-error', 'Failed to load extra sets'))
+                .finally(this.set.bind(this, 'loading', false));
+      }
 
     });
   </script>
