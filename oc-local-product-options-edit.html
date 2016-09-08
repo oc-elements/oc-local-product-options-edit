@@ -15,11 +15,17 @@ Element to Element to edit local product option sets on the Ordercloud platform
     <style>
       :host {
         display: block;
+        padding-bottom: 10px;
+      }
+
+      small {
+        text-align: right;
+        display: block;
+        margin-right: 20px;
       }
 
       paper-button {
-        margin-top: 15px;
-        margin-bottom: 15px;
+        margin: 10px 0;
       }
     </style>
 
@@ -27,8 +33,9 @@ Element to Element to edit local product option sets on the Ordercloud platform
     <oc-product-option-api id="optionApi"></oc-product-option-api>
 
     <oc-list-selection selected-list="[[selectedList]]" selectable-list="[[selectableList]]"></oc-list-selection>
+    <small>Only option sets with extras in will display here</small>
 
-    <paper-button on-tap="updateOptions" raised>Update Options</paper-button>
+    <paper-button on-tap="_updateOptions" raised>Update Options</paper-button>
 
   </template>
 
@@ -36,14 +43,30 @@ Element to Element to edit local product option sets on the Ordercloud platform
     Polymer({
 
       is: 'oc-local-product-options-edit',
+      behaviors: [OC.Behaviours.ApiConsumer],
 
       properties: {
         organisationId: Number,
-        productId : Number,
-        selectedList : Array,
-        selectableList: Array,
+        loaded: Boolean,
+        productId : {
+          type: Number,
+          computed: "_computeProductId(product)"
+        },
 
-        originalList: Array,
+        selectedList : {
+          type: Array,
+          value: function() {
+            return [];
+          }
+        },
+        selectableList: {
+          type: Array,
+          value: function() {
+            return [];
+          }
+        },
+
+        allOptionSets: Array,
 
         loading: {
           type: Boolean,
@@ -52,29 +75,65 @@ Element to Element to edit local product option sets on the Ordercloud platform
 
       },
 
-      listeners : {
-        "item-add" : "addOption"
+      observers: [
+        "refresh(productId)",
+        "_computeOptionSets(allOptionSets, product.optionSets)"
+      ],
+
+      refresh : function(){
+
+        if (!this.productId || this.loaded) {
+          return
+        }
+
+        this.loading = true;
+
+        this.getOptionSets()
+
+        this.loaded = true;
+
       },
 
-      getSelectedOptions : function(productId){
-        return this.$.prodApi.getProductOptionSets(productId);
+      getOptionSets : function(){
+        this.$.optionApi.getOptionSets(1, -1)
+                .then(this._setPropertyResponseResults.bind(this, 'allOptionSets'))
+                .catch(this.fire.bind(this, 'options_error', 'Could not load option sets'))
+                .finally(this.set.bind(this, 'loading', false));
       },
 
-      getSelectableOptions : function(){
-        return this.$.optionApi.getOptionSets(1, -1);
+      _computeOptionSets : function(allOptionSets, productOptionSets){
+
+        allOptionSets.forEach(function(optionSet){
+
+          var isProductOptionSet = false;
+
+          productOptionSets.forEach(function(productOptionSet){
+            if(optionSet.id === productOptionSet.id) {
+              isProductOptionSet = true;
+
+              this.push('selectedList', optionSet);
+            }
+          }.bind(this));
+
+          if(!isProductOptionSet && optionSet.options.length){
+            this.push('selectableList', optionSet);
+          }
+
+        }.bind(this));
+
       },
 
-      addOption : function(e){
-        var optionsSetId = e.detail.id;
+      _computeProductId : function(product){
+        return product.id;
       },
 
-      updateOptions : function(){
+      _updateOptions : function(){
 
         this.loading = true;
 
         var promisesToExecute = [],
                 selected = this.selectedList,
-                original = this.originalList;
+                original = this.product.optionSets;
 
         selected.forEach(function(obj){
           var isInOriginal = false;
@@ -107,7 +166,7 @@ Element to Element to edit local product option sets on the Ordercloud platform
         }.bind(this))
 
         Promise.all(promisesToExecute)
-                .catch(this.fire.bind(this, 'extra-set-error', 'Failed to load extra sets'))
+                .catch(this.fire.bind(this, 'extra-set-error', 'Failed to save option sets'))
                 .finally(this.set.bind(this, 'loading', false));
       }
 
